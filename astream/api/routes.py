@@ -79,7 +79,7 @@ async def manifest(
     try:
         unique_genres = await catalog_service.extract_unique_genres()
         base_manifest["catalogs"][0]["extra"][1]["options"] = unique_genres
-        logger.log("API", f"MANIFEST - Ajout de {len(unique_genres)} options de genre depuis le catalogue")
+        logger.info(f"MANIFEST - Ajout de {len(unique_genres)} options de genre depuis le catalogue")
     except Exception as e:
         logger.error(f"MANIFEST - Echec de l'extraction des genres: {e}")
 
@@ -145,7 +145,7 @@ async def get_anime_stream(
     episode_id: str = Path(..., description="Identifiant d'épisode (format: as:slug:s1e1)"),
     b64config: str = Path(..., description="Configuration encodée en base64")
 ) -> Dict[str, List[Dict[str, Any]]]:
-    logger.log("STREAM", f"Demande de flux pour: {episode_id}")
+    logger.info(f"STREAM - Demande de flux pour: {episode_id}")
 
     config = validate_config(b64config)
     episode_id_formatted = episode_id.replace(".json", "")
@@ -160,7 +160,7 @@ async def get_anime_stream(
             config=config
         )
 
-        logger.log("STREAM", f"{len(streams)} flux trouvés pour {episode_id}")
+        logger.info(f"STREAM - {len(streams)} flux trouvés pour {episode_id}")
         return {"streams": streams}
 
     except Exception as e:
@@ -183,7 +183,7 @@ async def manifest_default(request: Request) -> Dict[str, Any]:
     try:
         unique_genres = await catalog_service.extract_unique_genres()
         base_manifest["catalogs"][0]["extra"][1]["options"] = unique_genres
-        logger.log("API", f"MANIFEST - Ajout de {len(unique_genres)} options de genre depuis le catalogue")
+        logger.info(f"MANIFEST - Ajout de {len(unique_genres)} options de genre depuis le catalogue")
     except Exception as e:
         logger.error(f"MANIFEST - Echec de l'extraction des genres: {e}")
 
@@ -238,7 +238,7 @@ async def stream_default(
     request: Request,
     episode_id: str = Path(..., description="Identifiant d'épisode (format: as:slug:s1e1)")
 ) -> Dict[str, List[Dict[str, Any]]]:
-    logger.log("STREAM", f"Demande de flux pour: {episode_id}")
+    logger.info(f"STREAM - Demande de flux pour: {episode_id}")
 
     episode_id_formatted = episode_id.replace(".json", "")
     config = ConfigModel()
@@ -251,7 +251,7 @@ async def stream_default(
             config=config.model_dump()
         )
 
-        logger.log("STREAM", f"{len(streams)} flux trouvés pour {episode_id}")
+        logger.info(f"STREAM - {len(streams)} flux trouvés pour {episode_id}")
         return {"streams": streams}
 
     except Exception as e:
