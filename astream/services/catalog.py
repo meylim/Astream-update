@@ -4,7 +4,7 @@ from typing import List, Dict, Any, Optional
 from astream.utils.logger import logger
 from astream.scrapers.animesama.client import animesama_api
 from astream.scrapers.animesama.helpers import parse_genres_string
-from astream.serviceso.tmdb.service import tmdb_service
+from astream.services.tmdb.service import tmdb_service
 from astream.utils.stremio_helpers import StremioMetaBuilder, StremioLinkBuilder
 
 class CatalogService:
