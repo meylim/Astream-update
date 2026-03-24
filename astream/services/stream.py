@@ -15,30 +15,18 @@ from astream.utils.languages import filter_by_language, sort_by_language_priorit
 from astream.utils.stremio_helpers import format_stream_for_stremio
 from astream.utils.mapper import id_mapper
 
-
 class StreamService:
-    """
-    Service responsable de la résolution des streams vidéo.
-    Supporte désormais les IDs IMDb (tt...) et Kitsu (kitsu...).
-    """
-
     def __init__(self):
         pass
 
     async def get_episode_streams(self, episode_id: str, language_filter: Optional[str] = None, language_order: Optional[str] = None, config: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
-        """
-        Récupère les streams pour un épisode.
-        Gère l'extraction de la saison/épisode pour les IDs universels.
-        """
         parts = episode_id.split(":")
         anime_slug = ""
         season, episode = 1, 1
 
-        # Cas 1 : ID interne Anime-Sama (as:slug:s1e1)
         if episode_id.startswith("as:"):
             anime_slug = parts[1]
             try:
-                # Parsing simple du format s1e1
                 ep_part = parts[2].lower()
                 if 's' in ep_part and 'e' in ep_part:
                     season = int(ep_part.split('s')[1].split('e')[0])
@@ -47,16 +35,13 @@ class StreamService:
                     episode = int(ep_part)
             except (IndexError, ValueError):
                 pass
-
-        # Cas 2 : ID IMDb (tt1234:1:1) ou Kitsu (kitsu:1234:1)
         elif episode_id.startswith("tt") or episode_id.startswith("kitsu"):
             base_id = f"{parts[0]}:{parts[1]}" if episode_id.startswith("kitsu") else parts[0]
             anime_slug = await id_mapper.translate_to_animesama_slug(base_id)
-            
             try:
                 if episode_id.startswith("tt"):
                     season, episode = int(parts[1]), int(parts[2])
-                else: # kitsu
+                else: 
                     episode = int(parts[2])
             except (IndexError, ValueError):
                 pass
@@ -65,7 +50,7 @@ class StreamService:
             logger.error(f"STREAM - Impossible d'identifier l'anime pour {episode_id}")
             return []
 
-        logger.log("STREAM", f"Recherche de flux pour {anime_slug} S{season}E{episode}")
+        logger.info(f"STREAM - Recherche de flux pour {anime_slug} S{season}E{episode}")
 
         try:
             anime_data = await get_or_fetch_anime_details(animesama_api.details, anime_slug)
@@ -76,10 +61,9 @@ class StreamService:
             target_season = next((s for s in seasons if s.get("season_number") == season), None)
 
             if not target_season:
-                logger.warning(f"Saison {season} introuvable pour {anime_slug}")
+                logger.warning(f"STREAM - Saison {season} introuvable pour {anime_slug}")
                 return []
 
-            # Extraction en direct des URLs player sur Anime-Sama
             player_urls = await animesama_player.extractor.extract_player_urls_smart_mapping_with_language(
                 anime_slug=anime_slug,
                 season_data=target_season,
