@@ -22,7 +22,7 @@ class CatalogService:
         self.tmdb_service = tmdb_service
 
     async def get_complete_catalog(self, request, b64config: str, search: Optional[str] = None,
-                                   genre_filter: Optional[str] = None, config=None) -> List[Dict[str, Any]]:
+                                   genre: Optional[str] = None, config=None) -> List[Dict[str, Any]]:
         """
         Récupère le catalogue en direct (Recherche ou Catalogue complet).
         """
@@ -53,7 +53,7 @@ class CatalogService:
                 genres = parse_genres_string(genres_raw) if isinstance(genres_raw, str) else genres_raw
 
                 # Filtrage par genre (si demandé par Stremio)
-                if genre_filter and genre_filter not in genres:
+                if genre and genre not in genres:
                     continue
 
                 # Construction de la fiche Stremio (Image, Titre, Synopsis)
