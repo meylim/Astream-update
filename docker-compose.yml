@@ -1,13 +1,19 @@
 services:
   astream:
-    image: dyhlio/astream:latest
-    container_name: astream
+    build: .
+    container_name: astream-addon
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     volumes:
-      - ./data:/data
+      - .:/app
     environment:
-      - ANIMESAMA_URL=https://example.com
-      - DATABASE_TYPE=sqlite
-      - DATABASE_PATH=/data/astream.db
+      - PORT=8000
+      - HOST=0.0.0.0
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
