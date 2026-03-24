@@ -30,9 +30,9 @@ async def root() -> RedirectResponse:
 @main.get("/configure", summary="Configuration", description="Interface web pour configurer l'addon")
 async def configure(request: Request) -> Any:
     return templates.TemplateResponse(
-        "index.html",
-        {
-            "request": request,
+        request=request,
+        name="index.html",
+        context={
             "CUSTOM_HEADER_HTML": settings.CUSTOM_HEADER_HTML or "",
             "EXCLUDED_DOMAINS": get_all_excluded_domains(),
             "webConfig": {**web_config, "ADDON_NAME": settings.ADDON_NAME},
@@ -46,9 +46,9 @@ async def configure_addon(
     b64config: str = Path(..., description="Configuration encodée en base64")
 ) -> Any:
     return templates.TemplateResponse(
-        "index.html",
-        {
-            "request": request,
+        request=request,
+        name="index.html",
+        context={
             "CUSTOM_HEADER_HTML": settings.CUSTOM_HEADER_HTML or "",
             "EXCLUDED_DOMAINS": get_all_excluded_domains(),
             "webConfig": {**web_config, "ADDON_NAME": settings.ADDON_NAME},
@@ -72,6 +72,9 @@ async def manifest(
         base_manifest["name"] = f"{settings.ADDON_NAME} | {language_extension}"
     else:
         base_manifest["name"] = settings.ADDON_NAME
+
+    # Ajout des préfixes IMDb (tt) et Kitsu (kitsu) pour être universel
+    base_manifest["idPrefixes"] = ["as", "tt", "kitsu"]
 
     try:
         unique_genres = await catalog_service.extract_unique_genres()
@@ -173,6 +176,9 @@ async def manifest_default(request: Request) -> Dict[str, Any]:
     base_manifest["description"] = (
         f"CONFIGURATION OBSELETE, VEUILLEZ RECONFIGURER SUR {request.url.scheme}://{request.url.netloc}"
     )
+
+    # Ajout des préfixes IMDb (tt) et Kitsu (kitsu) pour être universel
+    base_manifest["idPrefixes"] = ["as", "tt", "kitsu"]
 
     try:
         unique_genres = await catalog_service.extract_unique_genres()
