@@ -16,40 +16,25 @@ if TYPE_CHECKING:
     from astream.scrapers.animesama.player import AnimeSamaPlayer
     from astream.scrapers.animesama.client import AnimeSamaAPI
 
-
 class MetadataService:
-    """
-    Service responsable de la gestion des métadonnées d'anime.
-    Modifié pour supporter la traduction d'ID universelle (IMDb/Kitsu).
-    """
-
     def __init__(self):
         self.animesama_api = animesama_api
         self.tmdb_service = tmdb_service
 
     async def get_complete_anime_meta(self, anime_id: str, config, request, b64config: str) -> Dict[str, Any]:
-        """
-        Récupère les métadonnées complètes.
-        Traduit l'ID IMDb/Kitsu en slug Anime-Sama avant de chercher.
-        """
-        # Phase 2 - Traduction
         anime_slug = await id_mapper.translate_to_animesama_slug(anime_id)
         if not anime_slug:
             logger.error(f"META - Échec traduction pour {anime_id}")
             return {}
 
-        logger.log("META", f"Chargement métadonnées pour: {anime_slug} (Original: {anime_id})")
-        
-        # On travaille désormais avec l'ID interne pour Anime-Sama
+        logger.info(f"META - Chargement métadonnées pour: {anime_slug} (Original: {anime_id})")
         internal_id = f"as:{anime_slug}"
 
         try:
-            # Récupération des détails depuis Anime-Sama (Scraping ou Cache)
             anime_data = await get_or_fetch_anime_details(self.animesama_api.details, anime_slug)
             if not anime_data:
                 return {}
 
-            # Construction de la meta de base enrichie avec TMDB
             meta = await StremioMetaBuilder.build_metadata_full(
                 anime_data, 
                 config, 
@@ -57,7 +42,6 @@ class MetadataService:
                 internal_id
             )
 
-            # Ajout des liens (genres, IMDb etc)
             genres_raw = anime_data.get('genres', '')
             genres = parse_genres_string(genres_raw) if isinstance(genres_raw, str) else genres_raw
             
