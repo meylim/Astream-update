@@ -8,25 +8,28 @@ ENV PYTHONUNBUFFERED=1
 # Dossier de travail
 WORKDIR /app
 
-# Installation des dépendances système nécessaires pour lxml et le réseau
+# Installation des dépendances système nécessaires pour lxml et curl-cffi
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libxml2-dev \
     libxslt-dev \
+    gcc \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Copie des fichiers de dépendances
+# 1. Copier les fichiers de configuration en premier
 COPY pyproject.toml .
+COPY README.md .
 
-# Installation des dépendances via pip (pour la simplicité en Docker)
+# 2. Copier le code source MAINTENANT pour que pip puisse construire le package
+# On copie tout le dossier astream/
+COPY astream/ ./astream/
+
+# 3. Installation du projet et de ses dépendances
 RUN pip install --no-cache-dir .
 
-# Copie du code source
-COPY . .
-
-# Exposition du port (par défaut Stremio utilise souvent le 8080 ou 8000)
+# Exposition du port
 EXPOSE 8000
 
-# Commande de lancement
+# Commande de lancement (on utilise le module astream.main)
 CMD ["python", "-m", "astream.main"]
