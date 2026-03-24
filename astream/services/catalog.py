@@ -4,16 +4,10 @@ from typing import List, Dict, Any, Optional
 from astream.utils.logger import logger
 from astream.scrapers.animesama.client import animesama_api
 from astream.scrapers.animesama.helpers import parse_genres_string
-from astream.services.tmdb.service import tmdb_service
+from astream.serviceso.tmdb.service import tmdb_service
 from astream.utils.stremio_helpers import StremioMetaBuilder, StremioLinkBuilder
 
-
 class CatalogService:
-    """
-    Service responsable de la gestion du catalogue.
-    Ultra-Sécurisé : Détecte dynamiquement les méthodes du scraper pour éviter tout crash.
-    """
-
     def __init__(self):
         self.animesama_api = animesama_api
         self.tmdb_service = tmdb_service
@@ -24,60 +18,33 @@ class CatalogService:
         anime_data = []
 
         try:
-            # --- 1. INTROSPECTION DYNAMIQUE DU SCRAPER ---
-            # On cherche intelligemment la méthode de recherche, peu importe son nom
-            search_fetcher = getattr(self.animesama_api, 'search', None)
-            if not search_fetcher:
-                search_fetcher = getattr(self.animesama_api, 'search_anime', None)
-
-            # On cherche intelligemment la méthode pour avoir le catalogue entier
-            catalog_fetcher = getattr(self.animesama_api, 'get_catalogue', None)
-            if not catalog_fetcher:
-                catalog_fetcher = getattr(self.animesama_api, 'get_catalog', None)
-            if not catalog_fetcher:
-                catalog_fetcher = getattr(self.animesama_api, 'get_all', None)
-                
-            # Parfois, c'est rangé dans un sous-module (ex: animesama_api.catalog.get_all)
-            if not catalog_fetcher and hasattr(self.animesama_api, 'catalog'):
-                catalog_fetcher = getattr(self.animesama_api.catalog, 'get_all', None)
-                if not catalog_fetcher:
-                    catalog_fetcher = getattr(self.animesama_api.catalog, 'get_catalogue', None)
-
-            # --- 2. RÉCUPÉRATION DES DONNÉES ---
-            if search and search_fetcher:
+            if search:
                 logger.info(f"CATALOG - Recherche Live via scraper : '{search}'")
-                anime_data = await search_fetcher(search)
-                
-            elif catalog_fetcher:
-                logger.info("CATALOG - Chargement via le scraper interne...")
-                full_catalog = await catalog_fetcher()
-                
-                if search:
-                    search_lower = search.lower()
-                    anime_data = [a for a in full_catalog if search_lower in a.get('title', '').lower() or search_lower in a.get('slug', '').lower()]
-                else:
-                    anime_data = full_catalog
-                    
+                # On utilise la méthode exacte détectée dans tes logs
+                if hasattr(self.animesama_api, 'search_anime'):
+                    anime_data = await self.animesama_api.search_anime(search)
+                elif hasattr(self.animesama_api, 'search'):
+                    anime_data = await self.animesama_api.search(search)
             else:
-                # Si AUCUNE méthode n'est trouvée, on log les méthodes disponibles pour débugger
-                api_methods = [m for m in dir(self.animesama_api) if not m.startswith('_')]
-                logger.error(f"CATALOG - Scraper incomplet ! Méthodes trouvées dans client.py: {api_methods}")
-                logger.warning("CATALOG - Fallback sur le dataset local (qui est peut-être vide).")
+                logger.info("CATALOG - Chargement du catalogue général...")
                 
-                from astream.utils.data_loader import get_dataset_loader
-                full_catalog = await get_dataset_loader().get_all_animes()
-                
-                if search:
-                    search_lower = search.lower()
-                    anime_data = [a for a in full_catalog if search_lower in a.get('title', '').lower() or search_lower in a.get('slug', '').lower()]
+                # S'il y a une méthode de catalogue sur l'API, on l'utilise
+                if hasattr(self.animesama_api, 'get_catalogue'):
+                    anime_data = await self.animesama_api.get_catalogue()
                 else:
-                    anime_data = full_catalog
+                    logger.info("CATALOG - Utilisation du dataset en mémoire.")
+                    from astream.utils.data_loader import get_dataset_loader
+                    loader = get_dataset_loader()
+                    # On utilise la bonne propriété du loader
+                    anime_data = loader.dataset if hasattr(loader, 'dataset') else []
+                    
+                    if not anime_data:
+                         logger.warning("CATALOG - Le dataset local est vide (0 anime).")
 
         except Exception as e:
             logger.error(f"CATALOG - Erreur récupération live: {e}")
             return []
 
-        # --- 3. CONSTRUCTION DES FICHES ---
         for anime in anime_data:
             try:
                 anime_slug = anime.get('slug', '')
