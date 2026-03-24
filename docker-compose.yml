@@ -6,11 +6,13 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    # On monte le volume pour le développement (facultatif mais utile)
     volumes:
       - .:/app
     environment:
       - PORT=8000
       - HOST=0.0.0.0
+      - PYTHONUNBUFFERED=1
     restart: unless-stopped
     logging:
       driver: "json-file"
