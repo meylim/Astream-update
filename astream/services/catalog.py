@@ -32,11 +32,11 @@ class CatalogService:
         try:
             if search:
                 # RECHERCHE LIVE sur Anime-Sama (Phase 2 - Étape 4)
-                logger.log("CATALOG", f"Recherche en direct sur Anime-Sama : '{search}'")
+                logger.info(f"CATALOG - Recherche en direct sur Anime-Sama : '{search}'")
                 anime_data = await self.animesama_api.search(search)
             else:
                 # CATALOGUE GÉNÉRAL (Souvent basé sur les nouveautés ou le planning)
-                logger.log("CATALOG", "Chargement du catalogue live...")
+                logger.info("CATALOG - Chargement du catalogue live...")
                 anime_data = await self.animesama_api.get_catalogue()
                 
         except Exception as e:
@@ -69,7 +69,7 @@ class CatalogService:
                 logger.error(f"CATALOG - Erreur meta pour {anime.get('slug')}: {e}")
                 continue
 
-        logger.log("API", f"CATALOG - {len(metas)} résultats affichés")
+        logger.info(f"CATALOG - {len(metas)} résultats affichés")
         return metas
 
     async def extract_unique_genres(self) -> List[str]:
